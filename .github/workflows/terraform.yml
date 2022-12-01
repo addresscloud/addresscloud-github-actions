@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       terraform-action:
-        description: "The terraform action to run i.e. 'plan' or 'apply'. If 'plan' is specified and the workflow is run against a pull request, then 'secrets.github-token' is required."
+        description: "The terraform action to run i.e. 'plan' or 'apply'. If 'plan' is specified then 'secrets.github-token' is required."
         required: true
         type: string
       terraform-version:
