@@ -14,7 +14,7 @@ Reusable workflows for github actions.
 
 ## Usage
 
-In another repository, add a reference to a workflow in this repository in a job. E.g. to use the terraform apply workflow, add:
+In a job in another repository, add a reference to a workflow in this repository. E.g. to use the terraform apply workflow, add:
 
 ```
 jobs:
