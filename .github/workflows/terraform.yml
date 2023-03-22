@@ -27,9 +27,9 @@ on:
         type: string
         default: build/
       run-tf-fmt:
-        description: "A boolean to indicated whether to run `terraform fmt`"
+        description: "A boolean to indicate whether to run `terraform fmt`"
         required: false
-        type: boolean
+        type: string
         default: true
     secrets:
       terraform-token:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Terraform Format
         id: fmt
-        if: ${{ inputs.run-tf-fmt == 'true' }}
+        if: ${{ fromJSON(inputs.run-tf-fmt) }}
         run: terraform fmt -check --recursive
         working-directory: ${{ inputs.working-directory }}
 
