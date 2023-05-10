@@ -1,0 +1,126 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "The environment to run terraform apply against i.e. dev, staging or prod"
+        required: true
+        type: string
+      terraform-action:
+        description: "The terraform action to run i.e. 'plan' or 'apply'. If 'plan' is specified then 'secrets.github-token' is required."
+        required: true
+        type: string
+      terraform-version:
+        description: "The terraform version to use."
+        required: true
+        type: string
+      working-directory:
+        description: "The name of the base terraform directory e.g. 'terraform' or 'infrastructure'"
+        required: true
+        type: string
+      build-artifact-name:
+        description: "The name of the artifacts to download, no artifacts are downloaded if this is not specified."
+        required: false
+        type: string
+      build-artifact-path:
+        description: "The path to the directory with built artifacts for terraform e.g. 'dist/' or 'build/'."
+        required: false
+        type: string
+        default: build/
+      run-tf-fmt:
+        description: "A boolean to indicate whether to run `terraform fmt`"
+        required: false
+        type: string
+        default: true
+      workspace:
+        description: "The TerraformCloud workspace"
+        required: true
+        type: string
+    secrets:
+      terraform-token:
+        required: true
+      github-token:
+        required: false
+
+env:
+  TF_WORKSPACE: ${{ inputs.workspace }}
+
+jobs:
+  terraform:
+    name: "terraform ${{ inputs.terraform-action }}"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}/${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Download build output artifact
+        uses: actions/download-artifact@master
+        if: inputs.build-artifact-name
+        with:
+          name: ${{ inputs.build-artifact-name }}
+          path: ${{ inputs.build-artifact-path }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+          cli_config_credentials_token: ${{ secrets.terraform-token }}
+
+      - name: Terraform Format
+        id: fmt
+        if: ${{ fromJSON(inputs.run-tf-fmt) }}
+        run: terraform fmt -check --recursive
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: inputs.terraform-action == 'plan'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Write Plan to Pull Request (if PR exists)
+        uses: actions/github-script@v6
+        if: inputs.terraform-action == 'plan'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.github-token }}
+          script: |
+            if (context.issue.number) {
+              const output = `#### Environment: \`${{ inputs.environment }}\`
+              #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+              #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+              #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+              #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+              <details><summary>Show Plan</summary>
+              \`\`\`\n
+              ${process.env.PLAN}
+              \`\`\`
+              </details>
+              *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+      
+      - name: Terraform Apply
+        if: inputs.terraform-action == 'apply'
+        run: terraform apply -auto-approve -input=false
