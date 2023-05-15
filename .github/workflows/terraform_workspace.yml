@@ -72,13 +72,13 @@ jobs:
         run: terraform fmt -check --recursive
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Set Terraform workspace
-        id: workspace
-        run: terraform workspace select "${{ inputs.workspace }}"
-
       - name: Terraform Init
         id: init
         run: terraform init -input=false
+
+      - name: Set Terraform workspace
+        id: workspace
+        run: terraform workspace select "${{ inputs.workspace }}"
 
       - name: Terraform Validate
         id: validate
