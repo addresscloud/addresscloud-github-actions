@@ -41,9 +41,6 @@ on:
       github-token:
         required: false
 
-env:
-  TF_WORKSPACE: ${{ inputs.workspace }}
-
 jobs:
   terraform:
     name: "terraform ${{ inputs.terraform-action }}"
@@ -77,7 +74,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: terraform init -input=false -backend-config="config.remote.${{ inputs.workspace }}"
 
       - name: Terraform Validate
         id: validate
