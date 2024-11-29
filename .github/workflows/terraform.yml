@@ -54,9 +54,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       
-      - name: Download build output artifact
-        uses: actions/download-artifact@${{ inputs.download-artifact-version }}
-        if: inputs.build-artifact-name
+      - name: Download build output artifact v3
+        uses: actions/download-artifact@v3
+        if: inputs.build-artifact-name && inputs.download-artifact-version == 'v3'
+        with:
+          name: ${{ inputs.build-artifact-name }}
+          path: ${{ inputs.build-artifact-path }}
+
+      - name: Download build output artifact v4
+        uses: actions/download-artifact@v4
+        if: inputs.build-artifact-name && inputs.download-artifact-version == 'v4'
         with:
           name: ${{ inputs.build-artifact-name }}
           path: ${{ inputs.build-artifact-path }}
