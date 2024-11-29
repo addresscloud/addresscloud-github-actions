@@ -31,6 +31,11 @@ on:
         required: false
         type: string
         default: true
+      download-artifact-version:
+        description: "The version of the download-artifact action to use."
+        required: false
+        type: string
+        default: v3
     secrets:
       terraform-token:
         required: true
@@ -50,7 +55,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Download build output artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@${{ inputs.download-artifact-version }}
         if: inputs.build-artifact-name
         with:
           name: ${{ inputs.build-artifact-name }}
