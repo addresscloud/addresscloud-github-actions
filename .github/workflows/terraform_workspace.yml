@@ -35,6 +35,11 @@ on:
         description: "The TerraformCloud workspace"
         required: true
         type: string
+      download-artifact-version:
+        description: "The version of the download-artifact action to use."
+        required: false
+        type: string
+        default: v3
     secrets:
       terraform-token:
         required: true
@@ -53,9 +58,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       
-      - name: Download build output artifact
+      - name: Download build output artifact v3
         uses: actions/download-artifact@v3
-        if: inputs.build-artifact-name
+        if: inputs.build-artifact-name && inputs.download-artifact-version == 'v3'
+        with:
+          name: ${{ inputs.build-artifact-name }}
+          path: ${{ inputs.build-artifact-path }}
+
+      - name: Download build output artifact v4
+        uses: actions/download-artifact@v4
+        if: inputs.build-artifact-name && inputs.download-artifact-version == 'v4'
         with:
           name: ${{ inputs.build-artifact-name }}
           path: ${{ inputs.build-artifact-path }}
