@@ -35,7 +35,7 @@ on:
         description: "The version of the download-artifact action to use."
         required: false
         type: string
-        default: v3
+        default: v4
     secrets:
       terraform-token:
         required: true
@@ -53,13 +53,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
-      - name: Download build output artifact v3
-        uses: actions/download-artifact@v3
-        if: inputs.build-artifact-name && inputs.download-artifact-version == 'v3'
-        with:
-          name: ${{ inputs.build-artifact-name }}
-          path: ${{ inputs.build-artifact-path }}
 
       - name: Download build output artifact v4
         uses: actions/download-artifact@v4
@@ -67,6 +60,10 @@ jobs:
         with:
           name: ${{ inputs.build-artifact-name }}
           path: ${{ inputs.build-artifact-path }}
+
+      - name: Error on non-v4 download artifact
+        if: inputs.build-artifact-name && inputs.download-artifact-version != 'v4'
+        run: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
